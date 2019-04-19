@@ -96,12 +96,12 @@ class WordGenerator_v2(BaseGenerator):
         super().__init__()
         
     def train_generator(self, epochs, batch_size=None):    
-        self.words, self.word_lengths = self._get_words_property()
+        self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
         
         self.prob = { 
             l: np.random.rand(self.alphabet_length, self.alphabet_length) \
-                for l in self.word_lengths
+                for l in self.word_length
         }
         if batch_size == None:
             for e in trange(1,epochs+1, desc="training", ascii=True):
@@ -155,14 +155,14 @@ class WordGenerator_v3(BaseGenerator):
         super().__init__()
         
     def train_generator(self, epochs, batch_size=None):    
-        self.words, self.word_lengths = self._get_words_property()
+        self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
         
         self.prob = {}
-        for l in self.word_lengths:
+        for l in self.word_length:
             for _ in range(l):
                 self.prob[l] = { 
-                    i: np.random.rand(len(self.alphbet), len(self.alphbet)) \
+                    i: np.random.rand(len(self.alphabet), len(self.alphabet)) \
                         for i in range(l-1)
                 }
                 
@@ -214,18 +214,18 @@ class WordGenerator_v3(BaseGenerator):
         return the_word
     
     
-    
-    
-    
-    
-    
 if __name__ == "__main__":
-    G = WordGenerator_v2()
-    G.train_generator(epochs=200, batch_size=5000)
+    G = WordGenerator_v3()
+    G.train_generator(epochs=200, batch_size=10000)
     print('---')
     while True:
         n = int(input('word length = '))
         print(G.generate_word(word_length=n))
+    
+    
+    
+    
+    
     
     
     
