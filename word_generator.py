@@ -46,9 +46,9 @@ class WordGenerator_v1(BaseGenerator):
         util = SGD_Utility()
         
         if batch_size == None:
-            for e in range(1,epochs+1):
+            for e in trange(1,epochs+1, desc="training", ascii=True):
                 np.random.shuffle(self.words)
-                for w in tqdm(self.words, desc="epoch %03d"%e, ascii=True):
+                for w in self.words:
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
@@ -59,9 +59,9 @@ class WordGenerator_v1(BaseGenerator):
                         for neg_index in neg_index_list:
                             self.prob[self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
         else:
-            for e in range(1,epochs+1):
+            for e in trange(1,epochs+1, desc="training", ascii=True)):
                 training_set = np.random.choice(self.words, size=batch_size, replace=False)
-                for w in tqdm(training_set, desc="epoch %03d"%e, ascii=True):
+                for w in training_set:
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
@@ -81,7 +81,7 @@ class WordGenerator_v1(BaseGenerator):
             if word_length not in self.word_length:
                 word_length = np.random.choice(self.word_length)
         this_a_index = np.random.choice(list(range(self.alphabet_length)))
-        the_word = self.alphabet[init_a_index]
+        the_word = self.alphabet[this_a_index]
         for i in range(word_length-1):
             next_a_index = np.random.choice(list(range(self.alphabet_length)),p=self.prob[this_a_index])
             the_word += self.alphabet[next_a_index]
@@ -103,9 +103,9 @@ class WordGenerator_v2(BaseGenerator):
                 for l in self.word_lengths
         }
         if batch_size == None:
-            for e in range(1,epochs+1):
+            for e in range(1,epochs+1, desc="training", ascii=True)):
                 np.random.shuffle(self.words)
-                for w in tqdm(self.words, desc="epoch %03d"%e, ascii=True):
+                for w in self.words:
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
@@ -116,9 +116,9 @@ class WordGenerator_v2(BaseGenerator):
                         for neg_index in neg_index_list:
                             self.prob[self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
         else:
-            for e in range(1,epochs+1):
+            for e in range(1,epochs+1, desc="training", ascii=True)):
                 training_set = np.random.choice(self.words, size=batch_size, replace=False)
-                for w in tqdm(training_set, desc="epoch %03d"%e, ascii=True):
+                for w in training_set:
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
