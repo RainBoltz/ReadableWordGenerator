@@ -9,7 +9,7 @@ class SGD_Utility:
         self.pos_lr_list = [1 + 0.1**x for x in range(5,5+self.lr_cnt)]
         self.neg_lr_list = [0.999**x for x in range(1,1+self.lr_cnt)]
         
-    def negative_sampling_list(self, candidates, pos_index, samples=13):
+    def negative_sampling_list(self, candidates, pos_index, samples=20):
         candidates.remove(pos_index)
         sample_list = np.random.choice(candidates, size=samples, replace=False)
         return sample_list
@@ -216,7 +216,7 @@ class WordGenerator_v3(BaseGenerator):
     
 if __name__ == "__main__":
     G = WordGenerator_v3()
-    G.train_generator(epochs=200, batch_size=10000)
+    G.train_generator(epochs=300, batch_size=100000)
     print('---')
     while True:
         n = int(input('word length = '))
