@@ -1,5 +1,6 @@
 import os
 import string
+import pickle
 import numpy as np
 from tqdm import tqdm, trange
 
@@ -9,7 +10,7 @@ class SGD_Utility:
         self.pos_lr_list = [1 + 0.1**x for x in range(5,5+self.lr_cnt)]
         self.neg_lr_list = [0.999**x for x in range(1,1+self.lr_cnt)]
         
-    def negative_sampling_list(self, candidates, pos_index, samples=20):
+    def negative_sampling_list(self, candidates, pos_index, samples=12):
         candidates.remove(pos_index)
         sample_list = np.random.choice(candidates, size=samples, replace=False)
         return sample_list
@@ -17,13 +18,21 @@ class SGD_Utility:
     def get_learning_rate(self, i_epoch):
         lr_index = int(np.floor(i_epoch/10)//self.lr_cnt)
         return self.pos_lr_list[lr_index], self.neg_lr_list[lr_index]
+    
+   
 
 class BaseGenerator:
-    def __init__(self):
+    def __init__(self, prob_file=None):
         self.alphabet = list(string.ascii_lowercase)
         self.alphabet_length = len(self.alphabet)
         self.alphabet_index = { a:i for i,a in enumerate(self.alphabet) }
-    
+        if prob_file == None:
+            self.init_prob = True
+        else:
+            self.init_prob = False
+            with open(prob_file, 'rb') as json_file:  
+                self.prob=pickle.load(json_file)
+                
     def _get_words_property(self):
         with open(os.path.dirname(os.path.realpath(__file__))+'\\words.txt') as f:
             words = set(f.read().split())
@@ -33,18 +42,22 @@ class BaseGenerator:
                 L.append(len(w))
         return list(words), L
         
-
+    def save_probs(self, target_path):
+        with open(target_path, 'wb') as outfile:  
+            pickle.dump(self.prob, outfile)
         
 
 class WordGenerator_v1(BaseGenerator):
-    def __init__(self):
-        super().__init__()
-        self.prob = np.random.rand(self.alphabet_length, self.alphabet_length)
+    def __init__(self, prob_file=None):
+        super().__init__(prob_file=prob_file)
     
     def train_generator(self, epochs, batch_size=None):  
         self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
         
+        if self.init_prob:
+            self.prob = np.random.rand(self.alphabet_length, self.alphabet_length)
+            
         if batch_size == None:
             for e in trange(1,epochs+1, desc="training", ascii=True):
                 np.random.shuffle(self.words)
@@ -92,17 +105,17 @@ class WordGenerator_v1(BaseGenerator):
 
         
 class WordGenerator_v2(BaseGenerator):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, prob_file=None):
+        super().__init__(prob_file=prob_file)
         
     def train_generator(self, epochs, batch_size=None):    
         self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
-        
-        self.prob = { 
-            l: np.random.rand(self.alphabet_length, self.alphabet_length) \
-                for l in self.word_length
-        }
+        if self.init_prob:
+            self.prob = { 
+                l: np.random.rand(self.alphabet_length, self.alphabet_length) \
+                    for l in self.word_length
+            }
         if batch_size == None:
             for e in trange(1,epochs+1, desc="training", ascii=True):
                 np.random.shuffle(self.words)
@@ -151,20 +164,21 @@ class WordGenerator_v2(BaseGenerator):
     
 
 class WordGenerator_v3(BaseGenerator):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, prob_file=None):
+        super().__init__(prob_file=prob_file)
         
     def train_generator(self, epochs, batch_size=None):    
         self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
         
-        self.prob = {}
-        for l in self.word_length:
-            for _ in range(l):
-                self.prob[l] = { 
-                    i: np.random.rand(len(self.alphabet), len(self.alphabet)) \
-                        for i in range(l-1)
-                }
+        if self.init_prob:
+            self.prob = {}
+            for l in self.word_length:
+                for _ in range(l):
+                    self.prob[l] = { 
+                        i: np.random.rand(len(self.alphabet), len(self.alphabet)) \
+                            for i in range(l-1)
+                    }
                 
         if batch_size == None:
             for e in trange(1,epochs+1, desc="training", ascii=True):
@@ -212,11 +226,13 @@ class WordGenerator_v3(BaseGenerator):
             the_word += self.alphabet[next_a_index]
             this_a_index = next_a_index
         return the_word
+        
     
     
 if __name__ == "__main__":
     G = WordGenerator_v3()
-    G.train_generator(epochs=300, batch_size=100000)
+    G.train_generator(epochs=250, batch_size=150000)
+    G.save_probs('g3.pkl')
     print('---')
     while True:
         n = int(input('word length = '))
