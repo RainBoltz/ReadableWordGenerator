@@ -10,7 +10,7 @@ class SGD_Utility:
         self.pos_lr_list = [1 + 0.1**x for x in range(5,5+self.lr_cnt)]
         self.neg_lr_list = [0.999**x for x in range(1,1+self.lr_cnt)]
         
-    def negative_sampling_list(self, candidates, pos_index, samples=12):
+    def negative_sampling_list(self, candidates, pos_index, samples=16):
         candidates.remove(pos_index)
         sample_list = np.random.choice(candidates, size=samples, replace=False)
         return sample_list
@@ -112,41 +112,37 @@ class WordGenerator_v2(BaseGenerator):
         self.words, self.word_length = self._get_words_property()
         util = SGD_Utility()
         if self.init_prob:
-            self.prob = { 
-                l: np.random.rand(self.alphabet_length, self.alphabet_length) \
-                    for l in self.word_length
-            }
+            self.prob = np.random.rand(self.word_length[-1]-1, self.alphabet_length, self.alphabet_length)
+            
         if batch_size == None:
             for e in trange(1,epochs+1, desc="training", ascii=True):
                 np.random.shuffle(self.words)
                 for w in self.words:
-                    the_word_length = len(w)
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
                         pos_index = self.alphabet_index[next_alphabet]
                         neg_index_list = util.negative_sampling_list(list(range(self.alphabet_length)), pos_index)
                         pos_lr, neg_lr = util.get_learning_rate(e)
-                        self.prob[the_word_length][self.alphabet_index[this_alphabet]][self.alphabet_index[next_alphabet]] *= pos_lr
+                        self.prob[i][self.alphabet_index[this_alphabet]][self.alphabet_index[next_alphabet]] *= pos_lr
                         for neg_index in neg_index_list:
-                            self.prob[the_word_length][self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
+                            self.prob[i][self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
         else:
             for e in trange(1,epochs+1, desc="training", ascii=True):
                 training_set = np.random.choice(self.words, size=batch_size, replace=False)
                 for w in training_set:
-                    the_word_length = len(w)
                     for i in range(len(w)-1):
                         this_alphabet = w[i]
                         next_alphabet = w[i+1]
                         pos_index = self.alphabet_index[next_alphabet]
                         neg_index_list = util.negative_sampling_list(list(range(self.alphabet_length)), pos_index)
                         pos_lr, neg_lr = util.get_learning_rate(e)
-                        self.prob[the_word_length][self.alphabet_index[this_alphabet]][self.alphabet_index[next_alphabet]] *= pos_lr
+                        self.prob[i][self.alphabet_index[this_alphabet]][self.alphabet_index[next_alphabet]] *= pos_lr
                         for neg_index in neg_index_list:
-                            self.prob[the_word_length][self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
-        for w_l in self.word_length:
+                            self.prob[i][self.alphabet_index[this_alphabet]][neg_index] *= neg_lr
+        for w_i in range(self.word_length[-1]-1):
             for a_i in range(self.alphabet_length):
-                self.prob[w_l][a_i] = self.prob[w_l][a_i]/np.sum(self.prob[w_l][a_i])
+                self.prob[w_i][a_i] = self.prob[w_i][a_i]/np.sum(self.prob[w_i][a_i])
                 
     def generate_word(self, word_length=None):
         if word_length == None:
@@ -157,7 +153,7 @@ class WordGenerator_v2(BaseGenerator):
         this_a_index = np.random.choice(list(range(self.alphabet_length)))
         the_word = self.alphabet[this_a_index]
         for i in range(word_length-1):
-            next_a_index = np.random.choice(list(range(self.alphabet_length)),p=self.prob[word_length][this_a_index])
+            next_a_index = np.random.choice(list(range(self.alphabet_length)),p=self.prob[i][this_a_index])
             the_word += self.alphabet[next_a_index]
             this_a_index = next_a_index
         return the_word
@@ -231,7 +227,7 @@ class WordGenerator_v3(BaseGenerator):
     
 if __name__ == "__main__":
     G = WordGenerator_v3()
-    G.train_generator(epochs=250, batch_size=150000)
+    G.train_generator(epochs=300, batch_size=80000)
     G.save_probs('g3.pkl')
     print('---')
     while True:
